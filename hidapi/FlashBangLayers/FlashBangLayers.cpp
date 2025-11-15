@@ -5,10 +5,10 @@
 #include <cstring>
 #include <hidapi.h>
 
-constexpr unsigned short LEFT_VID = 0xfeed; // replace
-constexpr unsigned short LEFT_PID = 0x8020; // replace
-constexpr unsigned short RIGHT_VID = 0xfeed; // replace
-constexpr unsigned short RIGHT_PID = 0x8021; // replace
+constexpr unsigned short LEFT_VID = 0xfeed;
+constexpr unsigned short LEFT_PID = 0x8020;
+constexpr unsigned short RIGHT_VID = 0xfeed;
+constexpr unsigned short RIGHT_PID = 0x8021;
 
 constexpr unsigned short USAGE_PAGE = 0xFF60; // QMK default raw HID usage page
 constexpr unsigned short LEFT_USAGE = 0x61;   // adjust if needed
@@ -33,66 +33,119 @@ std::string find_device_path(unsigned short vid, unsigned short pid, unsigned sh
 
 int main() {
     if (hid_init() != 0) {
+#ifdef _DEBUG
         std::cerr << "hid_init failed\n";
+#endif // _DEBUG
         return 1;
     }
 
-    std::string left_path, right_path;
-    while (true) {
-        left_path = find_device_path(LEFT_VID, LEFT_PID, USAGE_PAGE, LEFT_USAGE);
-        right_path = find_device_path(RIGHT_VID, RIGHT_PID, USAGE_PAGE, RIGHT_USAGE);
+    while (true)
+    {
 
-        if (!left_path.empty() && !right_path.empty()) break;
-#ifdef _DEBUG
-        std::cerr << "Waiting for devices (left/right) to appear...\n";
-#endif
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
+        std::string left_path, right_path;
+        while (true) {
+            left_path = find_device_path(LEFT_VID, LEFT_PID, USAGE_PAGE, LEFT_USAGE);
+            right_path = find_device_path(RIGHT_VID, RIGHT_PID, USAGE_PAGE, RIGHT_USAGE);
 
-    hid_device* left_dev = hid_open_path(left_path.c_str());
-    hid_device* right_dev = hid_open_path(right_path.c_str());
-    if (!left_dev || !right_dev) {
-#ifdef _DEBUG
-        std::cerr << "Failed to open devices\n";
-#endif
-        return 2;
-    }
-
-    // Set non-blocking or blocking as you prefer. We'll use blocking read here:
-    hid_set_nonblocking(left_dev, 0);
-
-    uint8_t buffer[RAW_REPORT_SIZE + 1] = { 0 };
-    while (true) {
-
-        // hid_write requires the first byte to be the report ID. So read from an offset 1 so it can be passed directly into the read.
-        // The report ID should always be zero here, so no need to set it.
-        int res = hid_read(left_dev, (buffer + 1), RAW_REPORT_SIZE); // blocking
-        if (res > 0) {
-
-            if (buffer[1] == 0x1 || buffer[1] == 0x2) 
+            if (!left_path.empty() && !right_path.empty())
             {
-                buffer[0] = 0;
-                int w = hid_write(right_dev, buffer, RAW_REPORT_SIZE + 1);
-#ifdef _DEBUG
-                std::cout << "Sent press, wrote " << w << " bytes\n";
-#endif
+                break;
             }
-        }
-        else {
-            // error or timeout
-            if (res < 0) {
+
 #ifdef _DEBUG
-                std::cerr << "hid_read error\n";
+            std::cerr << "Waiting for devices (left/right) to appear...\n";
+#endif
+
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+
+        hid_device* left_dev = hid_open_path(left_path.c_str());
+        hid_device* right_dev = hid_open_path(right_path.c_str());
+
+        if (left_dev && right_dev)
+        {
+
+            // Set non-blocking or blocking as you prefer. We'll use blocking read here: (0 blocking, 1 nonblocking)
+            hid_set_nonblocking(left_dev, 0);
+            uint8_t readErrorCount = 0;
+            uint8_t writeErrorCount = 0;
+            uint8_t buffer[RAW_REPORT_SIZE + 1] = { 0 };
+            while (true) {
+
+                // hid_write requires the first byte to be the report ID. So read from an offset 1 so it can be passed directly into the read.
+                // The report ID should always be zero here, so no need to set it.
+                int res = hid_read(left_dev, (buffer + 1), RAW_REPORT_SIZE); // blocking
+                if (res > 0) {
+
+                    if (buffer[1] == 0x1 || buffer[1] == 0x2)
+                    {
+                        buffer[0] = 0;
+                        int w = hid_write(right_dev, buffer, RAW_REPORT_SIZE + 1);
+
+                        if (w < 0) 
+                        {
+
+                            // Error occured
+                            writeErrorCount++;
+#ifdef _DEBUG       
+                            std::cerr << "hid_write error\n";
+#endif // _DEBUG
+                            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                            if (writeErrorCount > 3)
+                            {
+                                break;
+                            }
+                        }
+#ifdef _DEBUG
+                        else 
+                        {
+                            std::cout << "Sent press, wrote " << w << " bytes\n";
+                        }
+#endif
+
+
+                    }
+                }
+                else {
+                    // error or timeout
+                    if (res < 0) {
+                        readErrorCount++;
+#ifdef _DEBUG       
+                        std::cerr << "hid_read error\n";
 #endif // _DEBUG
 
+                    }
+                    // small sleep to avoid tight loop if non-blocking
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    if (readErrorCount > 5)
+                    {
+                        break;
+                    }
+                }
             }
-            // small sleep to avoid tight loop if non-blocking
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
         }
+        else
+        {
+#ifdef _DEBUG
+            std::cerr << "Failed to open devices\n";
+#endif
+        }
+
+        if (left_dev)
+        {
+            hid_close(left_dev);
+        }
+        if (right_dev)
+        {
+            hid_close(right_dev);
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+
     }
 
-    hid_close(left_dev);
-    hid_close(right_dev);
+
+    // Code should never get here
     hid_exit();
     return 0;
 }

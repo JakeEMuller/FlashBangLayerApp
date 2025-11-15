@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>D:\KeyboardProject\SplitKeyboard\WindowsApp\hidapi\windows\x64\Debug\FlashBangLayers.exe</FullPath>
+      <FullPath>D:\KeyboardProject\FlashBangLayerApp\hidapi\windows\x64\Debug\FlashBangLayers.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />
