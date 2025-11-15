@@ -1,5 +1,5 @@
+
 #include <iostream>
-#include <vector>
 #include <thread>
 #include <chrono>
 #include <cstring>
@@ -30,8 +30,11 @@ std::string find_device_path(unsigned short vid, unsigned short pid, unsigned sh
     hid_free_enumeration(devs);
     return path;
 }
-
+#ifdef _DEBUG
 int main() {
+#else
+int WinMain() {
+#endif
     if (hid_init() != 0) {
 #ifdef _DEBUG
         std::cerr << "hid_init failed\n";
