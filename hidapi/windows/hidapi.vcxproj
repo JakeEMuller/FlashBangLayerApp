@@ -37,7 +37,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset Condition="'$(VisualStudioVersion)'=='11'">v110</PlatformToolset>
     <PlatformToolset Condition="'$(VisualStudioVersion)'=='12'">v120</PlatformToolset>
     <PlatformToolset Condition="'$(VisualStudioVersion)'=='14'">v140</PlatformToolset>

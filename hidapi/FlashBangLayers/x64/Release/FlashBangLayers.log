@@ -1,0 +1,8 @@
+﻿     Creating library D:\KeyboardProject\FlashBangLayerApp\hidapi\windows\x64\Release\FlashBangLayers.lib and object D:\KeyboardProject\FlashBangLayerApp\hidapi\windows\x64\Release\FlashBangLayers.exp
+LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
+  Generating code
+  0 of 185 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  FlashBangLayers.vcxproj -> D:\KeyboardProject\FlashBangLayerApp\hidapi\windows\x64\Release\FlashBangLayers.exe
